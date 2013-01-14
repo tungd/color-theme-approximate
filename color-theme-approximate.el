@@ -47,9 +47,6 @@
 ;; (autoload 'color-theme-approximate-on "color-theme-approximate")
 ;; (color-theme-approximate-on)
 ;;
-;;; TODO:
-;; - Customizable approximator
-;;
 ;;; Changelog
 ;;
 ;; v0.1, Jan 14 2013
@@ -96,6 +93,11 @@ Fallback to `color-name-to-rgb' for named colors."
    (* 0.59 (- (nth 1 rgb1) (nth 1 rgb2)))
    (* 0.11 (- (nth 2 rgb1) (nth 2 rgb2)))))
 
+(defvar ca-approximator #'ca-rgb-diff
+  "Function used to calculate the different between colors.
+The approximator is called with two lists of RGB values, for
+the pre-defined color and the current processed respectly.")
+
 (defun ca--approximate (color)
   "Find the closest defined color. Use our custom `ca-color-to-rgb'
 because `color-name-to-rgb' is already return the wrong approximation."
@@ -104,7 +106,7 @@ because `color-name-to-rgb' is already return the wrong approximation."
         (min-diff 3)
         (rgb (ca-color-to-rgb color)))
     (dolist (defined (defined-colors) min)
-      (setq diff (ca-rgb-diff rgb (gethash defined ca-defined-rgb-map)))
+      (setq diff (funcall #'ca-approximator rgb (gethash defined ca-defined-rgb-map)))
       (when (< diff min-diff)
         (setq min-diff diff
               min defined)))))
