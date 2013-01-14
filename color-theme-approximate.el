@@ -106,7 +106,7 @@ because `color-name-to-rgb' is already return the wrong approximation."
         (min-diff 3)
         (rgb (ca-color-to-rgb color)))
     (dolist (defined (defined-colors) min)
-      (setq diff (funcall #'ca-approximator rgb (gethash defined ca-defined-rgb-map)))
+      (setq diff (funcall ca-approximator rgb (gethash defined ca-defined-rgb-map)))
       (when (< diff min-diff)
         (setq min-diff diff
               min defined)))))
