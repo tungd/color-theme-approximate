@@ -110,14 +110,9 @@ because `color-name-to-rgb' is already return the wrong approximation."
               min defined)))))
 
 (defun ca-approximate (color)
-  "See `ca--approximation'."
+  "See `ca--approximate'."
   (or (gethash color ca-closest-map)
       (puthash color (ca--approximate color) ca-closest-map)))
-
-(defun ca-process-component (component)
-  "Helper function I use to test themes.
-Usage: (mapcar #'ca-process-component ...)"
-  (list (car component) (ca-approximate (nth 1 component))))
 
 (defun ca-process-face (face)
   (let ((background (face-background face))
