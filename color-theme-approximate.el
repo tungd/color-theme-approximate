@@ -58,7 +58,8 @@
 (defvar ca-defined-rgb-map
   (let ((rgb-map (make-hash-table :test 'equal :size 256)))
     (dolist (name (defined-colors) rgb-map)
-      (puthash name (color-name-to-rgb name) rgb-map)))
+      (let* ((rgb (color-name-to-rgb name)))
+        (puthash (apply #'color-rgb-to-hex rgb) rgb rgb-map))))
   "Map of defined colors and it's RGB value. To speed things up.")
 
 (defvar ca-closest-map
