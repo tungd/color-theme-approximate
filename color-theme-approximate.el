@@ -141,3 +141,5 @@ because `color-name-to-rgb' is already return the wrong approximation."
   (ad-activate 'load-theme))
 
 (provide 'color-theme-approximate)
+
+;;; color-theme-approximate.el ends here
