@@ -37,7 +37,7 @@
 ;;
 ;;; Commentary:
 ;;
-;; This package advise the `load-theme' function and convert non terminal colors
+;; This package advises the `load-theme' function and convert non terminal colors
 ;; to their closest approximation. Inspired by VIM's CSApprox plugin
 ;; http://www.vim.org/scripts/script.php?script_id=2390
 ;;
@@ -94,7 +94,7 @@ Fallback to `color-name-to-rgb' for named colors."
    (* 0.59 (- (nth 1 rgb1) (nth 1 rgb2)))
    (* 0.11 (- (nth 2 rgb1) (nth 2 rgb2)))))
 
-(defvar ca-approximator #'ca-rgb-diff
+(defvar ca-approximator #'ca-rgb-diff-real
   "Function used to calculate the different between colors.
 The approximator is called with two lists of RGB values, for
 the pre-defined color and the current processed respectly.")
@@ -119,14 +119,16 @@ because `color-name-to-rgb' is already return the wrong approximation."
 
 (defun ca-process-face (face)
   (let ((background (face-background face))
-        (foreground (face-foreground face)))
+        (foreground (face-foreground face))
+        (frame (selected-frame)))
     (when background
-      (set-face-attribute face nil :background (ca-approximate background)))
+      (set-face-attribute face frame :background (ca-approximate background)))
     (when foreground
-      (set-face-attribute face nil :foreground (ca-approximate foreground)))))
+      (set-face-attribute face frame :foreground (ca-approximate foreground)))))
 
 (defadvice load-theme (after ca-apply-approximation)
-  (mapc #'ca-process-face (face-list)))
+  (unless (display-graphic-p (selected-frame))
+    (mapc #'ca-process-face (face-list))))
 
 ;;;###autoload
 (defun color-theme-approximate-on ()
