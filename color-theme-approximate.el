@@ -49,22 +49,27 @@
 ;;
 ;;; Changelog
 ;;
+;; v0.2, Mar 29 2013
+;; - Fix error that degrades colors on graphical frame running the same Emacs server
+;; - Fix error that `ca-defined-rgb-map' is wrong when start Emacs with graphical frame
+;;
 ;; v0.1, Jan 14 2013
 ;; - Initial version
 ;;
 
 (require 'color)
 
-(defvar ca-defined-rgb-map
-  (let ((rgb-map (make-hash-table :test 'equal :size 256)))
-    (dolist (name (defined-colors) rgb-map)
-      (let* ((rgb (color-name-to-rgb name)))
-        (puthash (apply #'color-rgb-to-hex rgb) rgb rgb-map))))
+(defvar ca-defined-rgb-map nil
   "Map of defined colors and it's RGB value. To speed things up.")
 
 (defvar ca-closest-map
   (make-hash-table :test 'equal :size 256)
   "Approximation cache.")
+
+(defun ca-make-defined-rgb-map ()
+  (let ((rgb-map (make-hash-table :test 'equal :size 256)))
+    (dolist (name (defined-colors) rgb-map)
+      (puthash name (color-name-to-rgb name) rgb-map))))
 
 (defun ca-color-to-rgb (color)
   "Convert color to RGB without implied approximation.
@@ -128,6 +133,7 @@ because `color-name-to-rgb' is already return the wrong approximation."
 
 (defadvice load-theme (after ca-apply-approximation)
   (unless (display-graphic-p (selected-frame))
+    (setq ca-defined-rgb-map (ca-make-defined-rgb-map))
     (mapc #'ca-process-face (face-list))))
 
 ;;;###autoload
