@@ -19,7 +19,7 @@ Preview with [Twilight Anti-Bright Theme](preview/twilight-anti-bright.png) by
 
 * Add to your Emacs init file:
 
-    (color-theme-approximate-on)
+        (color-theme-approximate-on)
 
 Note: I test this only on Emacs 24.1 and above. Pull requests for supporting
 other versions are welcomed.

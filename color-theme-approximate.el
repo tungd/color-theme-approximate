@@ -60,7 +60,7 @@
 (require 'color)
 
 (defvar ca-defined-rgb-map nil
-  "Map of defined colors and it's RGB value. To speed things up.")
+  "Map of defined colors and it's RGB value.")
 
 (defvar ca-closest-map
   (make-hash-table :test 'equal :size 256)
@@ -93,7 +93,7 @@ Fallback to `color-name-to-rgb' for named colors."
    (- (nth 2 rgb1) (nth 2 rgb2))))
 
 (defun ca-rgb-diff-real (rgb1 rgb2)
-  "Like `ca-rgb-diff' but scale the components according to eye sensitivity."
+  "Like `ca-rgb-diff' but the components are scaled according to eye sensitivity."
   (ca-distance
    (* 0.3 (- (nth 0 rgb1) (nth 0 rgb2)))
    (* 0.59 (- (nth 1 rgb1) (nth 1 rgb2)))
@@ -102,11 +102,11 @@ Fallback to `color-name-to-rgb' for named colors."
 (defvar ca-approximator #'ca-rgb-diff-real
   "Function used to calculate the different between colors.
 The approximator is called with two lists of RGB values, for
-the pre-defined color and the current processed respectly.")
+the color pre-defined and currently processed.")
 
 (defun ca--approximate (color)
   "Find the closest defined color. Use our custom `ca-color-to-rgb'
-because `color-name-to-rgb' is already return the wrong approximation."
+because `color-name-to-rgb' already returns the wrong approximation."
   (let ((diff nil)
         (min nil)
         (min-diff 3)
