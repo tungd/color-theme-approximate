@@ -1,13 +1,13 @@
 ;;; color-theme-approximate.el --- Makes Emacs theme works on terminal transparently
 ;;;
 ;; Author: Tung Dao <me@tungdao.com>
-;; Version: 0.1
+;; Version: 0.3
 ;;
 ;; This file is NOT part of GNU Emacs
 ;;
 ;;; License: BSD http://opensource.org/licenses/BSD-3-Clause
 ;;
-;; Copyright (c) 2013, Tung Dao
+;; Copyright (c) 2013 - 2014, Tung Dao
 ;; All rights reserved.
 ;;
 ;; Redistribution and use in source and binary forms, with or without
@@ -37,9 +37,13 @@
 ;;
 ;;; Commentary:
 ;;
-;; This package advises the `load-theme' function and convert non terminal colors
+;; This package advises the `load-theme' function and convert non-terminal colors
 ;; to their closest approximation. Inspired by VIM's CSApprox plugin
 ;; http://www.vim.org/scripts/script.php?script_id=2390
+;;
+;; Normally Emacs does have non-terminal color themes degrade, however in some
+;; system the effect is pretty poor. I've encountered this on Arch Linux and
+;; Ubuntu (probably caused by some libvte weirdness).
 ;;
 ;;; Installation:
 ;; Add the to your .emacs or similar:
@@ -48,6 +52,9 @@
 ;; (color-theme-approximate-on)
 ;;
 ;;; Changelog
+;;
+;; v0.3, Feb 23 2014
+;; - Fix for non-standard color names ("Grey07" in Magit)
 ;;
 ;; v0.2, Mar 29 2013
 ;; - Fix error that degrades colors on graphical frame running the same Emacs server
