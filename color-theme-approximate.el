@@ -71,11 +71,19 @@
     (dolist (name (defined-colors) rgb-map)
       (puthash name (color-name-to-rgb name) rgb-map))))
 
+(defun ca-normalize-named-color-name (name)
+  ;; This one is from `magit': "Grey07" needs to be normalized to "grey7"
+  (if (string-match "\\([a-zA-Z]+\\)\\([0-9]+\\)" name)
+      (format "%s%d"
+              (match-string 1 name)
+              (string-to-number (match-string 2 name)))
+    "black"))
+
 (defun ca-color-to-rgb (color)
   "Convert color to RGB without implied approximation.
 Fallback to `color-name-to-rgb' for named colors."
   (if (not (string-match "#[a-fA-F0-9]\\{6\\}" color))
-      (color-name-to-rgb color)
+      (color-name-to-rgb (ca-normalize-named-color-name color))
     (mapcar (lambda (component)
               (/ (string-to-number component 16) 255.0))
             (list (substring color 1 3)
