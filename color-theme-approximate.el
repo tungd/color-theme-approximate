@@ -1,7 +1,7 @@
 ;;; color-theme-approximate.el --- Makes Emacs theme works on terminal transparently
 ;;;
 ;; Author: Tung Dao <me@tungdao.com>
-;; Version: 0.3
+;; Version: 0.4
 ;;
 ;; This file is NOT part of GNU Emacs
 ;;
@@ -53,6 +53,9 @@
 ;;
 ;;; Changelog
 ;;
+;; v0.4, Feb 28 2014
+;; - Revamp and simplify
+;;
 ;; v0.3, Feb 23 2014
 ;; - Fix for non-standard color names ("Grey07" in Magit)
 ;;
@@ -66,39 +69,48 @@
 
 (require 'color)
 
-(defvar ca-defined-rgb-map nil
-  "Map of defined colors and it's RGB value.")
+(defvar ca-defined-rgb-list nil
+  "RGB values of defined colors.")
 
-(defvar ca-closest-map
-  (make-hash-table :test 'equal :size 256)
-  "Approximation cache.")
-
-(defun ca-make-defined-rgb-map ()
-  (let ((rgb-map (make-hash-table :test 'equal :size 256)))
-    (dolist (name (defined-colors) rgb-map)
-      (puthash name (color-name-to-rgb name) rgb-map))))
-
-(defun ca-normalize-named-color-name (name)
-  ;; This one is from `magit': "Grey07" needs to be normalized to "grey7"
-  (if (string-match "\\([a-zA-Z]+\\)\\([0-9]+\\)" name)
-      (format "%s%d"
-              (match-string 1 name)
-              (string-to-number (match-string 2 name)))
-    "black"))
+(defun ca-make-defined-rgb-list ()
+  (mapcar #'ca-color-to-rgb (defined-colors)))
 
 (defun ca-color-to-rgb (color)
   "Convert color to RGB without implied approximation.
-Fallback to `color-name-to-rgb' for named colors."
-  (if (not (string-match "#[a-fA-F0-9]\\{6\\}" color))
-      (color-name-to-rgb (ca-normalize-named-color-name color))
-    (mapcar (lambda (component)
-              (/ (string-to-number component 16) 255.0))
-            (list (substring color 1 3)
-                  (substring color 3 5)
-                  (substring color 5 7)))))
+Only fallback to `color-name-to-rgb' for named colors."
+  (cond
+   ;; Hex string of 6 chars
+   ((string-match "^#[[:xdigit:]]\\{6\\}$" color)
+    (let ((r (substring color 1 3))
+          (g (substring color 3 5))
+          (b (substring color 5 7)))
+      (mapcar (lambda (c) (string-to-number c 16))
+              (list r g b))))
+   ;; Hex string of 3 chars
+   ((string-match "^#[[:xdigit:]]\\{3\\}$" color)
+    (let ((r (substring color 1 2))
+          (g (substring color 2 3))
+          (b (substring color 3 4)))
+      (mapcar (lambda (c) (string-to-number (format "%s%s" c c) 16))
+              (list r g b))))
+   ;; Irregular name, .i.e "Grey07" => "grey7"
+   ((string-match "^\\([a-zA-Z]+\\)\\([0-9]+\\)$" color)
+    (mapcar (lambda (c) (round (* c 255)))
+            (color-name-to-rgb
+             (format "%s%d"
+                     (match-string 1 color)
+                     (string-to-number (match-string 2 color) 10)))))
+   ;; Anything else
+   (t (mapcar (lambda (c) (round (* c 255)))
+              (color-name-to-rgb color)))))
+
+(defun ca-rgb-to-color (rgb)
+  "Format RGB values into hex string."
+  (format "#%02X%02X%02X"
+          (nth 0 rgb) (nth 1 rgb) (nth 2 rgb)))
 
 (defun ca-distance (red green blue)
-  (sqrt (+ (* red red) (* green green) (* blue blue))))
+  (+ (* red red) (* green green) (* blue blue)))
 
 (defun ca-rgb-diff (rgb1 rgb2)
   "Distance in RGB colorspace."
@@ -119,36 +131,39 @@ Fallback to `color-name-to-rgb' for named colors."
 The approximator is called with two lists of RGB values, for
 the color pre-defined and currently processed.")
 
-(defun ca--approximate (color)
-  "Find the closest defined color. Use our custom `ca-color-to-rgb'
-because `color-name-to-rgb' already returns the wrong approximation."
-  (let ((diff nil)
-        (min nil)
-        (min-diff 3)
-        (rgb (ca-color-to-rgb color)))
-    (dolist (defined (defined-colors) min)
-      (setq diff (funcall ca-approximator rgb (gethash defined ca-defined-rgb-map)))
-      (when (< diff min-diff)
-        (setq min-diff diff
-              min defined)))))
-
 (defun ca-approximate (color)
-  "See `ca--approximate'."
-  (or (gethash color ca-closest-map)
-      (puthash color (ca--approximate color) ca-closest-map)))
+  "Find the closest defined color. Use our custom `ca-color-to-rgb'
+because `color-name-to-rgb' already returns the wrong approximation.
+The approximation can be customized by `ca-approximator'."
+  ;; (ca-color-to-rgb "#ff8") => (1.0 1.0 0.5333333333333333)
+  ;; (color-name-to-rgb "#ff8") => (0.8951965065502183 0.8951965065502183 0.0)
+  ;; (color-name-to-rgb "#ffff88") => (0.8951965065502183 0.8951965065502183 0.0)
+  (let ((min-diff (* 3 256 256))
+        (best nil))
+    (dolist (candidate ca-defined-rgb-list best)
+      (let ((diff (funcall ca-approximator color candidate)))
+        (when (< diff min-diff)
+          (setq min-diff diff
+                best candidate))))))
 
 (defun ca-process-face (face)
   (let ((background (face-background face))
         (foreground (face-foreground face))
         (frame (selected-frame)))
-    (when background
-      (set-face-attribute face frame :background (ca-approximate background)))
-    (when foreground
-      (set-face-attribute face frame :foreground (ca-approximate foreground)))))
+    (when (and background (ca-color-to-rgb background))
+      (set-face-attribute
+       face frame
+       :background
+       (ca-rgb-to-color (ca-approximate (ca-color-to-rgb background)))))
+    (when (and foreground (ca-color-to-rgb foreground))
+      (set-face-attribute
+       face frame
+       :foreground
+       (ca-rgb-to-color (ca-approximate (ca-color-to-rgb foreground)))))))
 
 (defadvice load-theme (after ca-apply-approximation)
   (unless (display-graphic-p (selected-frame))
-    (setq ca-defined-rgb-map (ca-make-defined-rgb-map))
+    (setq ca-defined-colors (ca-make-defined-rgb-list))
     (mapc #'ca-process-face (face-list))))
 
 ;;;###autoload
