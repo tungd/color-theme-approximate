@@ -37,7 +37,7 @@
 ;;
 ;;; Commentary:
 ;;
-;; This package advises the `load-theme' function and convert non-terminal colors
+;; This package advises the `enable-theme' function and convert non-terminal colors
 ;; to their closest approximation. Inspired by VIM's CSApprox plugin
 ;; http://www.vim.org/scripts/script.php?script_id=2390
 ;;
@@ -161,22 +161,22 @@ The approximation can be customized by `ca-approximator'."
        :foreground
        (ca-rgb-to-color (ca-approximate (ca-color-to-rgb foreground)))))))
 
-(defadvice load-theme (after ca-apply-approximation)
+(defadvice enable-theme (after ca-apply-approximation)
   (unless (display-graphic-p (selected-frame))
-    (setq ca-defined-colors (ca-make-defined-rgb-list))
-    (mapc #'ca-process-face (face-list))))
+    (setq ca-defined-rgb-list (ca-make-defined-rgb-list))
+    (mapc #'ca-process-face (reverse (face-list)))))
 
 ;;;###autoload
 (defun color-theme-approximate-on ()
   (interactive)
-  (ad-enable-advice 'load-theme 'after 'ca-apply-approximation)
-  (ad-activate 'load-theme))
+  (ad-enable-advice 'enable-theme 'after 'ca-apply-approximation)
+  (ad-activate 'enable-theme))
 
 ;;;###autoload
 (defun color-theme-approximate-off ()
   (interactive)
-  (ad-disable-advice 'load-theme 'after 'ca-apply-approximation)
-  (ad-activate 'load-theme))
+  (ad-disable-advice 'enable-theme 'after 'ca-apply-approximation)
+  (ad-activate 'enable-theme))
 
 (provide 'color-theme-approximate)
 
